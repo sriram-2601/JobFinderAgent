@@ -1,0 +1,18 @@
+[Unit]
+Description=Antigravity JobFinder AI - Autonomous Job Search Platform
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/Jobfinder
+ExecStart=/usr/local/bin/docker-compose up --build
+ExecStop=/usr/local/bin/docker-compose down
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=jobfinder
+
+[Install]
+WantedBy=multi-user.target
