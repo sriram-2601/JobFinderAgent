@@ -5,9 +5,7 @@ import {
   TrendingUp, BarChart2, CheckSquare, Search, Compass, FileText, ChevronRight, X, LogOut
 } from 'lucide-react';
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:8000' 
-  : 'https://sriram-jobfinder-backend.loca.lt';
+const API_BASE = window.location.port === '5173' ? 'http://localhost:8000' : '';
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">

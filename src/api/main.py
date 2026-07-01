@@ -697,3 +697,18 @@ def start_scheduler():
 def stop_scheduler():
     logger.info("Stopping background scheduler...")
     scheduler.shutdown()
+
+# Serve static frontend files
+from fastapi.responses import FileResponse
+
+dist_path = os.path.join(str(BASE_DIR), "frontend", "dist")
+if os.path.exists(dist_path):
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
+
+    @app.get("/{catchall:path}")
+    async def serve_react_app(catchall: str):
+        # Exclude API endpoints and screenshots from catchall routing
+        if catchall.startswith("api") or catchall.startswith("screenshots"):
+            raise HTTPException(status_code=404)
+        return FileResponse(os.path.join(dist_path, "index.html"))
+
