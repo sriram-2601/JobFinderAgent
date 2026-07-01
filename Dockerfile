@@ -52,7 +52,5 @@ COPY Sriram_Resume.pdf /app/Sriram_Resume.pdf
 # Create data directory
 RUN mkdir -p /app/data/screenshots /app/data/logs
 
-EXPOSE 8000
-
-# Run FastAPI server
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI server with dynamic port mapping
+CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
