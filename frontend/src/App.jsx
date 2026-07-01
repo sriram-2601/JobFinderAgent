@@ -591,6 +591,71 @@ export default function App() {
     name: '', email: '', phone: '', linkedin: '', github: '', portfolio: '', skills: '', experience: ''
   });
 
+  // Resume upload states
+  const [uploadState, setUploadState] = useState({ status: 'idle', error: '', progress: 0 });
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleResumeUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleResumeUpload = async (file) => {
+    if (!file) return;
+
+    // Enforce 10MB limit (10 * 1024 * 1024 bytes)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setUploadState({ status: 'error', error: 'File size exceeds the 10MB limit.' });
+      return;
+    }
+
+    // Enforce file extension
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
+    const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (!allowedExtensions.includes(extension)) {
+      setUploadState({ status: 'error', error: 'Invalid file type. Only PDF, DOC, and DOCX are allowed.' });
+      return;
+    }
+
+    setUploadState({ status: 'uploading', error: '', progress: 10 });
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await authFetch(`${API_BASE}/api/profile/resume`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Upload failed');
+      }
+
+      setUploadState({ status: 'success', error: '', progress: 100 });
+      alert("Resume uploaded successfully!");
+      fetchData(); // Refresh profile information
+    } catch (err) {
+      setUploadState({ status: 'error', error: err.message });
+    }
+  };
+
   // Scheduling Form States
   const [schedForm, setSchedForm] = useState({
     application_id: '', stage: 'OA', scheduled_at: '', notes: ''
@@ -1844,6 +1909,93 @@ export default function App() {
           <div className="glass-panel p-8 max-w-3xl mx-auto animate-fade-in">
             <h3 className="text-xl font-bold mb-6 font-display text-white border-b border-slate-800 pb-4">Edit Candidate Profile</h3>
             
+            {/* Resume Upload Section */}
+            <div className="mb-8 border-b border-slate-800 pb-8">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Resume or CV</h4>
+              
+              <div 
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById('resume-file-input').click()}
+                className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 ${
+                  dragActive 
+                    ? 'border-brand-500 bg-brand-500/5 shadow-lg shadow-brand-500/10 scale-[1.01]' 
+                    : uploadState.status === 'error'
+                      ? 'border-rose-500/30 bg-rose-500/5 hover:border-rose-500/50'
+                      : uploadState.status === 'success'
+                        ? 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50'
+                        : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 hover:bg-slate-900/10'
+                }`}
+              >
+                <input 
+                  id="resume-file-input"
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleResumeUpload(e.target.files[0]);
+                    }
+                  }}
+                />
+                
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <div className={`p-3 rounded-xl ${
+                    uploadState.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
+                    uploadState.status === 'error' ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-900 text-slate-400'
+                  }`}>
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {uploadState.status === 'uploading' && "Uploading resume..."}
+                      {uploadState.status === 'success' && "Resume uploaded successfully!"}
+                      {uploadState.status === 'error' && "Upload failed"}
+                      {uploadState.status === 'idle' && (profile.resume_path ? "Replace your Resume / CV" : "Upload your Resume / CV")}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Drag and drop your file here, or click to browse
+                    </p>
+                  </div>
+                  
+                  <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                    PDF, DOC, DOCX up to 10MB
+                  </div>
+                </div>
+              </div>
+
+              {/* Show Status or Errors */}
+              {uploadState.status === 'error' && (
+                <div className="mt-3 flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl font-medium">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {uploadState.error}
+                </div>
+              )}
+
+              {/* Current Resume details if present */}
+              {profile.resume_path && (
+                <div className="mt-4 p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                      <Check className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Active Resume</span>
+                      <span className="text-xs text-slate-200 block truncate mt-0.5 font-mono">
+                        {profile.resume_path.split('/').pop().split('\\').pop()}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-extrabold uppercase px-2 py-0.5 rounded">
+                    Verified
+                  </span>
+                </div>
+              )}
+            </div>
+
             <form onSubmit={handleUpdateProfile} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

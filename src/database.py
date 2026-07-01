@@ -101,6 +101,12 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+    # 4.2 Migration: Ensure candidate_profile table has resume_path column
+    try:
+        cursor.execute("ALTER TABLE candidate_profile ADD COLUMN resume_path TEXT")
+    except sqlite3.OperationalError:
+        pass
+
     # 5. Notifications Table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS notifications (

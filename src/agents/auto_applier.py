@@ -47,16 +47,20 @@ class AutoApplierAgent:
             logger.error(f"Profile or Job/Match data missing for application. job_id={job_id}, user_id={user_id}")
             return {"success": False, "reason": "Data missing"}
  
-        # Define resume path
-        resume_filename = "Sriram_Resume.pdf"
-        resume_path = os.path.join(str(BASE_DIR), resume_filename)
-        
-        if not os.path.exists(resume_path):
+        # Define resume path: check profile for custom path
+        resume_path = None
+        if "resume_path" in profile.keys():
+            resume_path = profile["resume_path"]
+            
+        if not resume_path or not os.path.exists(resume_path):
             # Fallback check
-            resume_path = os.path.join(os.getcwd(), resume_filename)
+            resume_filename = "Sriram_Resume.pdf"
+            resume_path = os.path.join(str(BASE_DIR), resume_filename)
             if not os.path.exists(resume_path):
-                logger.error(f"Resume file not found at {resume_path}")
-                return {"success": False, "reason": "Resume PDF file not found"}
+                resume_path = os.path.join(os.getcwd(), resume_filename)
+                if not os.path.exists(resume_path):
+                    logger.error(f"Resume file not found at {resume_path}")
+                    return {"success": False, "reason": "Resume PDF file not found"}
  
         logger.info(f"Automating application for user {user_id}: {job_match['job_title']} at {job_match['company_name']}")
  

@@ -3,7 +3,7 @@ import json
 import logging
 import hashlib
 from datetime import datetime, timedelta
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, APIRouter
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, APIRouter, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -314,6 +314,67 @@ def update_profile(profile: ProfileUpdate, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=500, detail=str(e))
     conn.close()
     return {"message": "Profile updated successfully"}
+
+@api_router.post("/api/profile/resume")
+async def upload_resume(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    # Enforce file size limit of 10MB
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    
+    # Read file size
+    file.file.seek(0, os.SEEK_END)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File size exceeds the 10MB limit.")
+        
+    # Validate extension
+    filename = file.filename
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in [".pdf", ".doc", ".docx"]:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only PDF, DOC, and DOCX are allowed.")
+        
+    resumes_dir = os.path.join(str(BASE_DIR), "data", "resumes")
+    os.makedirs(resumes_dir, exist_ok=True)
+    
+    # Save the file using user_id to prevent collision
+    safe_filename = f"user_{current_user['id']}_resume{ext}"
+    dest_path = os.path.join(resumes_dir, safe_filename)
+    
+    try:
+        content = await file.read()
+        with open(dest_path, "wb") as f:
+            f.write(content)
+    except Exception as e:
+        logger.error(f"Error saving uploaded file: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save uploaded file.")
+        
+    # Update candidate profile with the resume path
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM candidate_profile WHERE user_id = ?", (current_user["id"],))
+        existing = cursor.fetchone()
+        if existing:
+            cursor.execute("""
+                UPDATE candidate_profile
+                SET resume_path = ?
+                WHERE user_id = ?
+            """, (dest_path, current_user["id"]))
+        else:
+            # Create a default profile with the resume path
+            cursor.execute("""
+                INSERT INTO candidate_profile (name, email, phone, linkedin, github, portfolio, skills, experience, education, certifications, projects, achievements, resume_path, user_id)
+                VALUES (?, ?, '', '', '', '', '', '', '[]', '[]', '[]', '[]', ?, ?)
+            """, (current_user["fullName"] or current_user["username"], current_user["email"] or "", dest_path, current_user["id"]))
+        conn.commit()
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+    conn.close()
+    
+    return {"message": "Resume uploaded successfully", "resume_path": dest_path}
+
 
 @api_router.get("/api/jobs")
 def get_jobs(limit: int = 50):

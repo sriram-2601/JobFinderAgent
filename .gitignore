@@ -56,3 +56,10 @@ Desktop.ini
 *.njsproj
 *.sln
 *.sw?
+
+# Data / Database / Logs / Resumes
+data/*.db
+data/backups/
+data/logs/
+data/resumes/
+
