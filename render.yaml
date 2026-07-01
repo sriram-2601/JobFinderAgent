@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: jobfinder-backend
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    numInstances: 1
+    envVars:
+      - key: APP_MODE
+        value: AUTONOMOUS
+      - key: DATABASE_URL
+        value: sqlite:///app/data/jobfinder.db
