@@ -5,7 +5,9 @@ import {
   TrendingUp, BarChart2, CheckSquare, Search, Compass, FileText, ChevronRight, X, LogOut
 } from 'lucide-react';
 
-const API_BASE = window.location.port === '5173' ? 'http://localhost:8000' : '';
+const API_BASE = window.location.port === '5173' 
+  ? 'http://localhost:8000' 
+  : (import.meta.env.VITE_API_BASE || '');
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
