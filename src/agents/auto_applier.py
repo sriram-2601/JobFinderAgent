@@ -5,7 +5,7 @@ from src.database import get_db_connection
 from src.services.playwright_service import PlaywrightService
 from src.services.email_service import EmailService
 from src.services.telegram_service import TelegramService
-from src.config import BASE_DIR, APP_MODE
+from src.config import BASE_DIR, APP_MODE, DATA_DIR
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ class AutoApplierAgent:
         cursor = conn.cursor()
         
         # Log path
-        log_dir = os.path.join(str(BASE_DIR), "data", "logs")
+        log_dir = os.path.join(str(DATA_DIR), "logs")
         os.makedirs(log_dir, exist_ok=True)
         log_path = os.path.join(log_dir, f"{job_id}_{user_id}.log")
         with open(log_path, "w") as f:

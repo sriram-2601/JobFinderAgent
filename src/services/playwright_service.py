@@ -3,15 +3,15 @@ import logging
 import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from src.config import BASE_DIR
+from src.config import BASE_DIR, DATA_DIR
 from src.services.gemini_service import GeminiService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-SCREENSHOTS_DIR = BASE_DIR / "data" / "screenshots"
+SCREENSHOTS_DIR = DATA_DIR / "screenshots"
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-APPLICATION_LOGS_DIR = BASE_DIR / "data" / "logs"
+APPLICATION_LOGS_DIR = DATA_DIR / "logs"
 APPLICATION_LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 class PlaywrightService:

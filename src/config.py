@@ -7,8 +7,17 @@ from cryptography.fernet import Fernet
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+if os.getenv("VERCEL"):
+    DATA_DIR = Path("/tmp")
+else:
+    DATA_DIR = BASE_DIR / "data"
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Ensure subdirectories exist
+(DATA_DIR / "screenshots").mkdir(parents=True, exist_ok=True)
+(DATA_DIR / "logs").mkdir(parents=True, exist_ok=True)
+(DATA_DIR / "resumes").mkdir(parents=True, exist_ok=True)
 
 # Application Configuration
 APP_MODE = os.getenv("APP_MODE", "APPROVAL")

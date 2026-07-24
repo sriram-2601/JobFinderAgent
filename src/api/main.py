@@ -10,7 +10,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional, List
 from src.database import get_db_connection, init_db
-from src.config import APP_MODE, BASE_DIR
+from src.config import APP_MODE, BASE_DIR, DATA_DIR
 from src.agents.job_hunter import JobHunterAgent
 from src.agents.ai_matcher import AIMatcherAgent
 from src.agents.auto_applier import AutoApplierAgent
@@ -37,7 +37,7 @@ app.add_middleware(
 )
 
 # Mount screenshots directory to serve confirmation images
-screenshots_dir = os.path.join(str(BASE_DIR), "data", "screenshots")
+screenshots_dir = os.path.join(str(DATA_DIR), "screenshots")
 os.makedirs(screenshots_dir, exist_ok=True)
 app.mount("/screenshots", StaticFiles(directory=screenshots_dir), name="screenshots")
 
@@ -334,7 +334,7 @@ async def upload_resume(file: UploadFile = File(...), current_user: dict = Depen
     if ext not in [".pdf", ".doc", ".docx"]:
         raise HTTPException(status_code=400, detail="Invalid file type. Only PDF, DOC, and DOCX are allowed.")
         
-    resumes_dir = os.path.join(str(BASE_DIR), "data", "resumes")
+    resumes_dir = os.path.join(str(DATA_DIR), "resumes")
     os.makedirs(resumes_dir, exist_ok=True)
     
     # Save the file using user_id to prevent collision
